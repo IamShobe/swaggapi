@@ -1,0 +1,26 @@
+{
+  "info": {
+    "version": "1.0.0",
+    "description": "Rotest Swagger for resource and test management",
+    "license": {
+      "name": "MIT"
+    },
+    "title": "Rotest API"
+  },
+  "paths": {},
+  "schemes": [
+    "http"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+    }
+  },
+  "openapi": "3.0.1",
+  "consumes": [
+    "application/json"
+  ]
+}
