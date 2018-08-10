@@ -63,8 +63,7 @@ class DynamicType(CustomType):
         return "DynamicType({!r})".format(self.type)
 
     def eval(self):
-        mod = __import__('swagger_builder.api.openapi.models',
-                         fromlist=[self.type])
-        klass = getattr(mod, self.type)
+        import swagapi.api.openapi.models as models
+        klass = getattr(models, self.type)
 
         return klass

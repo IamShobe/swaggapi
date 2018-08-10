@@ -13,7 +13,7 @@ if not sys.platform.startswith("win32"):
     requirements.append('python-daemon')
 
 setup(
-    name='swagger_builder',
+    name='swagapi',
     version=__version__,
     description="Swagger REST API builder",
     license="MIT",
@@ -23,7 +23,6 @@ setup(
     python_requires="~=2.7.0",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    package_data={"swagger_builder": ["swagger.json"]},
     zip_safe=False,
     classifiers=[
         'License :: OSI Approved :: MIT License',
