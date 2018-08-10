@@ -1,5 +1,6 @@
 import re
 from api.openapi.utils import get_schema
+from django.conf.urls import url
 
 from .api.base_api import Field, AbstractResponse, NoContentResponse
 from .api.openapi.models import (Operation,
@@ -29,6 +30,10 @@ class Swagger(object):
         }
 
         self.api = self._build_file()
+
+    def get_django_urls(self):
+        return [url(r"^{}/?".format(request.URI), request.VIEW.__func__)
+                for request in self.requests]
 
     def _build_parameters(self, parameters):
         params = []

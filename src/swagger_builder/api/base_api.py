@@ -15,6 +15,7 @@ class AbstractRequest(object):
     TAGS = []
     PARAMS = []
     RESPONSES = {}
+    VIEW = NotImplemented
 
     def __init__(self, data):
         self.data = data
