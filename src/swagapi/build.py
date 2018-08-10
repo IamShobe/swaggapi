@@ -82,17 +82,18 @@ class Swagger(object):
         for request in self.requests:
             path = "/" + request.URI
             method = request.METHOD.lower()
-            summery = request.__doc__
+            description = request.__doc__
+            summary = description.split("\n", 1)[0] if description else None
 
             request_body, parameters = self._build_parameters(request.PARAMS)
             operation = Operation(tags=request.TAGS,
-                                  summery=summery,
-                                  description=summery,
+                                  summary=summary,
+                                  description=description,
                                   requestBody=request_body,
                                   responses=self._build_responses(
                                       request.RESPONSES))
 
-            paths[path] = Path(summery=summery,
+            paths[path] = Path(summary=summary,
                                parameters=parameters,
                                **{method: operation})
 

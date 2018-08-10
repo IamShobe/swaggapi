@@ -784,7 +784,7 @@ class Operation(StaticOpenAPIObject):
                                  "control. Tags can be used for logical "
                                  "grouping of operations by resources or any "
                                  "other qualifier."),
-        OpenAPIField(name="summery", type=str,
+        OpenAPIField(name="summary", type=str,
                      description="A short summary of what the operation "
                                  "does."),
         OpenAPIField(name="description", type=str,
@@ -875,7 +875,7 @@ class Path(StaticOpenAPIObject):
                                  "there are conflicts between the referenced "
                                  "definition and this Path Item's "
                                  "definition, the behavior is undefined."),
-        OpenAPIField(name="summery", type=str,
+        OpenAPIField(name="summary", type=str,
                      description="An optional, string summary, intended to "
                                  "apply to all operations in this path."),
         OpenAPIField(name="description", type=str,
