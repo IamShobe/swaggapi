@@ -907,7 +907,7 @@ class Path(StaticOpenAPIObject):
         OpenAPIField(name="trace", type=Operation,
                      description="A definition of a TRACE operation on this "
                                  "path."),
-        OpenAPIField(name="serves", type=List(Server),
+        OpenAPIField(name="servers", type=List(Server),
                      description="An alternative server array to service all "
                                  "operations in this path."),
         OpenAPIField(name="parameters",

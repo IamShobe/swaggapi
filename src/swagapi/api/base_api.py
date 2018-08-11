@@ -1,7 +1,12 @@
 import httplib
+import inspect
+import json
 import os
+from numbers import Number
 
 import requests
+from attrdict import AttrDict
+
 from .openapi.utils import get_schema
 
 from .openapi.models import Schema, Response, Media, Example
@@ -35,15 +40,18 @@ class AbstractRequest(object):
 
 
 class Field(object):
-    def __init__(self, name, type, description="", required=True,
+    def __init__(self, name, type, description="", required=False,
                  example=None, location="body", deprecated=False):
         self.name = name
         self.required = required
         self.type = type
         self.description = description
-        self.example = example
+        self.example = self.default_example() if example is None else example
         self.location = location
         self.deprecated = deprecated
+
+    def default_example(self):
+        return
 
     def ref_name(self):
         return self.name
@@ -65,6 +73,43 @@ class AbstractAPIModel(object):
     PROPERTIES = []
     EXAMPLE = None
     COMPONENT = "schemas"
+
+    def __init__(self, obj):
+        self.validate(obj)
+        self.obj = obj
+        self.attr_dict = AttrDict(self.obj)
+
+    def __getattr__(self, item):
+        return getattr(self.attr_dict, item)
+
+    @classmethod
+    def get_required_props(cls):
+        return [prop for prop in cls.PROPERTIES if prop.required]
+
+    @classmethod
+    def validate(cls, obj):
+        if not isinstance(obj, dict):
+            raise ValueError("Object must be of type dict! given {}".format(
+                obj))
+
+        keys = obj.keys()
+        if len(keys) < len(cls.PROPERTIES):
+            raise ValueError("Invalid number of properties")
+
+        for field in cls.get_required_props():
+            if field.name not in keys:
+                raise RuntimeError("Missing required field {}".format(
+                    field.name))
+
+            if not isfit(obj[field.name], field):
+                raise RuntimeError("Object doesn't fit the field: {!r} "
+                                   "doesn't fit {!r} in {!r}".format(
+                    obj[field.name], field, field.name))
+
+        return True
+
+    def __str__(self):
+        return str(self.PROPERTIES)
 
     @classmethod
     def ref_name(cls):
@@ -99,7 +144,6 @@ class AbstractAPIModel(object):
 
 class AbstractResponse(AbstractAPIModel):
     EXAMPLES = {}
-    COMPONENT = "responses"
 
     @classmethod
     def examples(cls, schema_bank, index):
@@ -133,6 +177,30 @@ class ArrayField(Field):
         self.items_type = items_type
         super(ArrayField, self).__init__(name, "array", *args, **kwargs)
 
+    def default_example(self):
+        if inspect.isclass(self.items_type):
+            if issubclass(self.items_type, AbstractAPIModel):
+                return [self.items_type.EXAMPLE]
+
+            elif issubclass(self.items_type, basestring):
+                return ["example", "example2"]
+
+            elif issubclass(self.items_type, Number):
+                return [0, 0]
+
+        elif isinstance(self.items_type, Field):
+            return [self.items_type.default_example()]
+
+    def validate(self, obj):
+        if not isinstance(obj, list):
+            return False
+
+        for item in obj:
+            if not isinstance(item, self.items_type):
+                return False
+
+        return True
+
     def schemas(self, schema_bank, index):
         super_schema = super(ArrayField, self).schemas(schema_bank, index)
         super_schema.items = self.items_type.schemas(schema_bank, index)
@@ -143,17 +211,32 @@ class StringField(Field):
     def __init__(self, name, *args, **kwargs):
         super(StringField, self).__init__(name, "string", *args, **kwargs)
 
+    def default_example(self):
+        return "example"
+
+
+class BoolField(Field):
+    def __init__(self, name, *args, **kwargs):
+        super(BoolField, self).__init__(name, "boolean", *args, **kwargs)
+
+    def default_example(self):
+        return False
 
 class NumberField(Field):
     def __init__(self, name, *args, **kwargs):
         super(NumberField, self).__init__(name, "integer", *args, **kwargs)
+
+    def default_example(self):
+        return 0
 
 
 class ModelField(Field):
     def __init__(self, name, model, *args, **kwargs):
         self.model = model
         super(ModelField, self).__init__(name, "object", *args, **kwargs)
-        self.example = self.model.EXAMPLE
+
+    def default_example(self):
+        return self.model.EXAMPLE
 
     def ref_name(self):
         return self.model.ref_name()
@@ -167,6 +250,53 @@ class Requester(object):
                                      base_url, BASE_API)
         self.logger = logger
 
-    def request(self, request_type, data):
-        request = request_type(data)
-        return request.execute(self.base_url, self.logger)
+    def request(self, request_type, method, data):
+        if not isinstance(data, AbstractAPIModel):
+            raise ValueError("data must be an instance of AbstractAPIModel!")
+
+        response = request_type.execute(self.base_url, method,
+                                        data.obj, logger=self.logger)
+
+        response_code = response.status_code
+        responses_models = request_type.RESPONSES_MODELS[method]
+        if responses_models is None or \
+                not response_code in responses_models:
+            responses_models = request_type.DEFAULT_RESPONSES
+        try:
+            content = response.json() if response.content else {}
+            response = responses_models[response_code](content)
+            response.code = response_code
+            return response
+
+        except:
+            return response.content
+
+
+def isfit(obj, class_name):
+    if isinstance(class_name, StringField):
+        return isinstance(obj, basestring)
+
+    elif isinstance(class_name, BoolField):
+        return isinstance(obj, bool)
+
+    elif isinstance(class_name, NumberField):
+        return isinstance(obj, Number)
+
+    elif isinstance(class_name, ModelField):
+        return class_name.model.validate(obj)
+
+    elif isinstance(class_name, ArrayField):
+        if not isinstance(obj, list):
+            return False
+
+        for item in obj:
+            if not isfit(item, class_name.items_type):
+                return False
+
+        return True
+
+    elif issubclass(class_name, AbstractAPIModel):
+        return class_name.validate(obj)
+
+    else:
+        return isinstance(obj, class_name)

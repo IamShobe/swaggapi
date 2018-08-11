@@ -1,8 +1,12 @@
 import re
 from api.openapi.utils import get_schema
 from django.conf.urls import url
+from django.views.decorators.csrf import csrf_exempt
 
-from .api.base_api import Field, AbstractResponse, NoContentResponse
+from .api.base_api import (Field,
+                           AbstractResponse,
+                           NoContentResponse,
+                           AbstractAPIModel)
 from .api.openapi.models import (Operation,
                                  Parameter,
                                  Path,
@@ -32,33 +36,35 @@ class Swagger(object):
         self.api = self._build_file()
 
     def get_django_urls(self):
-        return [url(r"^{}/?".format(request.URI), request.VIEW.__func__)
+        return [url(r"^{}/?".format(request.URI),
+                    csrf_exempt(request.as_view()))
                 for request in self.requests]
 
-    def _build_parameters(self, parameters):
+    def _build_parameters(self, param_model):
         params = []
         body_content = {}
         required_fields = []
         example = {}
-        for param in parameters:
-            if not isinstance(param, Field):
-                raise RuntimeError("{} expected, got {}".format(
-                    Field.__name__, type(param)))
+        if param_model is not None:
+            for param in param_model.PROPERTIES:
+                if not isinstance(param, Field):
+                    raise RuntimeError("{} expected, got {}".format(
+                        Field.__name__, type(param)))
 
-            schema = get_schema(param, self.scheme_bank, "schemas")
-            if param.location is "body":
-                body_content[param.name] = schema
-                required_fields.append(param.name)
+                schema = get_schema(param, self.scheme_bank, "schemas")
                 example[param.name] = param.example
+                if param.location is "body":
+                    body_content[param.name] = schema
+                    required_fields.append(param.name)
 
-            else:
-                params.append(Parameter(name=param.name,
-                                        description=param.description,
-                                        required=param.required,
-                                        schema=schema,
-                                        examples=param.example,
-                                        deprecated=param.deprecated,
-                                        **{"in": param.location}))
+                else:
+                    params.append(Parameter(name=param.name,
+                                            description=param.description,
+                                            required=param.required,
+                                            schema=schema,
+                                            examples=param.example,
+                                            deprecated=param.deprecated,
+                                            **{"in": param.location}))
 
         return RequestBody(content={
             "application/json": Media(schema=Schema(properties=body_content,
@@ -70,7 +76,7 @@ class Swagger(object):
         return_dict = {}
         for response, model in responses.items():
             resp = NoContentResponse
-            if isinstance(model, AbstractResponse):
+            if issubclass(model, AbstractResponse):
                 resp = model
 
             return_dict[str(response)] = resp.encode(self.scheme_bank)
@@ -81,21 +87,59 @@ class Swagger(object):
         paths = {}
         for request in self.requests:
             path = "/" + request.URI
-            method = request.METHOD.lower()
-            description = request.__doc__
-            summary = description.split("\n", 1)[0] if description else None
+            path_description = request.__doc__
+            path_summary = path_description.split("\n", 1)[0] \
+                if path_description else None
+            methods = request.implemented_methods()
+            path_methods = {}
+            parameters = []
+            default_responses = {}
+            if request.DEFAULT_RESPONSES is not None:
+                default_responses = self._build_responses(
+                    request.DEFAULT_RESPONSES)
 
-            request_body, parameters = self._build_parameters(request.PARAMS)
-            operation = Operation(tags=request.TAGS,
-                                  summary=summary,
-                                  description=description,
-                                  requestBody=request_body,
-                                  responses=self._build_responses(
-                                      request.RESPONSES))
+            default_body = None
+            if request.DEFAULT_MODEL is not None:
+                default_body, parameters = self._build_parameters(
+                    request.DEFAULT_MODEL
+                )
 
-            paths[path] = Path(summary=summary,
+            for method in methods:
+                description = request.__doc__
+                summary = description.split("\n", 1)[0] if description else None
+
+                params = parameters
+                request_body = None
+                if request.PARAMS_MODELS[method] is not None:
+                    request_body, params = self._build_parameters(
+                        request.PARAMS_MODELS[method])
+
+                elif default_body is not None:
+                    request_body = default_body
+
+                responses = {}
+                if request.RESPONSES_MODELS[method] is not None:
+                    responses = self._build_responses(
+                        request.RESPONSES_MODELS[method])
+
+                operation_responses = default_responses.copy()
+                operation_responses.update(responses)
+
+                if operation_responses == {}:
+                    operation_responses = None
+
+                operation = Operation(tags=request.TAGS[method],
+                                      summary=summary,
+                                      description=description,
+                                      parameters=params,
+                                      requestBody=request_body,
+                                      responses=operation_responses)
+                path_methods[method] = operation
+
+            paths[path] = Path(summary=path_summary,
+                               description=path_description,
                                parameters=parameters,
-                               **{method: operation})
+                               **path_methods)
 
         return paths
 
