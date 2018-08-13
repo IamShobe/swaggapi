@@ -109,6 +109,10 @@ class RequestView(View):
             return JsonResponse(e.encode(),
                                 status=httplib.INTERNAL_SERVER_ERROR)
 
+        except Exception as e:
+            raise JsonResponse(e.message,
+                                status=httplib.INTERNAL_SERVER_ERROR)
+
     @classmethod
     def implemented_methods(cls):
         return [m.lower() for m in cls.valid_methods if hasattr(cls, m)]
@@ -163,6 +167,10 @@ class Response(JsonResponse):
         except ServerError as e:
             response = e.encode()
             status = httplib.INTERNAL_SERVER_ERROR
+
+        except Exception as e:
+            raise JsonResponse(e.message,
+                                status=httplib.INTERNAL_SERVER_ERROR)
 
         super(Response, self).__init__(response, status=status, *args,
                                        **kwargs)

@@ -264,12 +264,12 @@ class Requester(object):
             responses_models = request_type.DEFAULT_RESPONSES
         try:
             content = response.json() if response.content else {}
-            response = responses_models[response_code](content)
-            response.code = response_code
-            return response
-
         except:
             return response.content
+        
+        response = responses_models[response_code](content)
+        response.code = response_code
+        return response
 
 
 def isfit(obj, class_name):
