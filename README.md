@@ -1,4 +1,4 @@
-# swagapi
+# swaggapi
 
 Swagger **OpenAPI 3** wrapper for Python.
 

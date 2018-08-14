@@ -3,7 +3,7 @@ import inspect
 
 from django.http import JsonResponse
 
-from swagapi.api.builder.server.exceptions import ServerError
+from swaggapi.api.builder.server.exceptions import ServerError
 
 
 class Response(JsonResponse):
@@ -46,4 +46,3 @@ class Response(JsonResponse):
 
         super(Response, self).__init__(response, status=status, *args,
                                        **kwargs)
-        

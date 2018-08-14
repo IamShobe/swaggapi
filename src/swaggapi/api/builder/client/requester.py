@@ -1,6 +1,6 @@
 import os
 
-from swagapi.api.builder.common.model import AbstractAPIModel
+from swaggapi.api.builder.common.model import AbstractAPIModel
 
 
 class Requester(object):

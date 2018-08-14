@@ -1,6 +1,6 @@
 from attrdict import AttrDict
-from swagapi.api.openapi.models import Example, Schema
-from swagapi.api.builder.utils import get_schema, isfit
+from swaggapi.api.openapi.models import Example, Schema
+from swaggapi.api.builder.utils import get_schema, isfit
 
 
 class AbstractAPIModel(object):

@@ -1,6 +1,6 @@
-from swagapi.api.builder.utils import get_schema
-from swagapi.api.builder.common.model import AbstractAPIModel
-from swagapi.api.openapi.models import Example, Response, Media
+from swaggapi.api.builder.utils import get_schema
+from swaggapi.api.builder.common.model import AbstractAPIModel
+from swaggapi.api.openapi.models import Example, Response, Media
 
 
 class AbstractResponse(AbstractAPIModel):

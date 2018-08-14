@@ -1,9 +1,9 @@
 import inspect
 from numbers import Number
 
-from swagapi.api.builder.utils import get_schema
-from swagapi.api.openapi.models import Schema, Example
-from swagapi.api.builder.common.model import AbstractAPIModel
+from swaggapi.api.builder.utils import get_schema
+from swaggapi.api.openapi.models import Schema, Example
+from swaggapi.api.builder.common.model import AbstractAPIModel
 
 
 class Field(object):

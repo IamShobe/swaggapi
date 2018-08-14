@@ -63,7 +63,7 @@ class DynamicType(CustomType):
         return "DynamicType({!r})".format(self.type)
 
     def eval(self):
-        import swagapi.api.openapi.models as models
+        import swaggapi.api.openapi.models as models
         klass = getattr(models, self.type)
 
         return klass

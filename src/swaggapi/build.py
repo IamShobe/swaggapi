@@ -3,15 +3,15 @@ import re
 from django.conf.urls import url
 from django.views.decorators.csrf import csrf_exempt
 
-from swagapi.api.builder.utils import get_schema
-from swagapi.api.builder.common.fields import Field
-from swagapi.api.builder.common.response import NoContentResponse, \
+from swaggapi.api.builder.utils import get_schema
+from swaggapi.api.builder.common.fields import Field
+from swaggapi.api.builder.common.response import NoContentResponse, \
     AbstractResponse
-from swagapi.api.openapi.models import (Operation,
-                                 Parameter,
-                                 Path,
-                                 Componenets,
-                                 OpenAPI, RequestBody, Media, Schema, Server)
+from swaggapi.api.openapi.models import (Operation,
+                                         Parameter,
+                                         Path,
+                                         Componenets,
+                                         OpenAPI, RequestBody, Media, Schema, Server)
 
 
 class Swagger(object):

@@ -12,10 +12,15 @@ requirements = [
 if not sys.platform.startswith("win32"):
     requirements.append('python-daemon')
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+
 setup(
-    name='swagapi',
+    name='swaggapi',
     version=__version__,
     description="Swagger REST API builder",
+    long_description=long_description,
     license="MIT",
     author="Elran Shefer",
     author_email="elran777@gmail.com",

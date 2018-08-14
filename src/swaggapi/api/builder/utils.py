@@ -1,6 +1,6 @@
 from numbers import Number
 
-from swagapi.api.openapi.models import Referance
+from swaggapi.api.openapi.models import Referance
 
 
 def get_schema(model, schema_bank, type, index=None):
@@ -18,11 +18,11 @@ def get_schema(model, schema_bank, type, index=None):
 
 
 def isfit(obj, class_name):
-    from swagapi.api.builder.common.model import AbstractAPIModel
-    from swagapi.api.builder.common.fields import (StringField,
-                                                   BoolField,
-                                                   NumberField,
-                                                   ModelField, ArrayField)
+    from swaggapi.api.builder.common.model import AbstractAPIModel
+    from swaggapi.api.builder.common.fields import (StringField,
+                                                    BoolField,
+                                                    NumberField,
+                                                    ModelField, ArrayField)
     if isinstance(class_name, StringField):
         return isinstance(obj, basestring)
 

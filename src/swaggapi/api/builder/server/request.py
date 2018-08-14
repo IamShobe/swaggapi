@@ -6,8 +6,8 @@ import requests
 from django.http import JsonResponse
 from django.views.generic import View
 
-from swagapi.api.builder.common.model import AbstractAPIModel
-from swagapi.api.builder.server.exceptions import ServerError, BadRequest
+from swaggapi.api.builder.common.model import AbstractAPIModel
+from swaggapi.api.builder.server.exceptions import ServerError, BadRequest
 
 
 class Request(object):
