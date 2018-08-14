@@ -4,7 +4,7 @@ from swagapi.api.builder.common.model import AbstractAPIModel
 
 
 class Requester(object):
-    def __init__(self, host, port, logger, base_url):
+    def __init__(self, host, port, base_url, logger=None):
         self.base_url = os.path.join("http://{}:{}/".format(host, port),
                                      base_url)
         self.logger = logger
