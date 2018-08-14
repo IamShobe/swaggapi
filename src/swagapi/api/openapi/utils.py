@@ -7,20 +7,6 @@ from .types import (DynamicType,
                     SpecialType)
 
 
-def get_schema(model, schema_bank, type, index=None):
-    ref_name = model.ref_name()
-    if index is not None:
-        ref_name += str(index)
-
-    if not ref_name in schema_bank:
-        handler = getattr(model, type)
-        schema = handler(schema_bank, index)
-        schema_bank[type][ref_name] = schema
-
-    from .models import Referance
-    return Referance(ref_name, type,
-                     **{"$ref": "#/components/{}/{}".format(type, ref_name)})
-
 def is_instance(value, class_name):
     if value is None:
         return True

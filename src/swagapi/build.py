@@ -1,13 +1,13 @@
 import re
-from api.openapi.utils import get_schema
+
 from django.conf.urls import url
 from django.views.decorators.csrf import csrf_exempt
 
-from .api.base_api import (Field,
-                           AbstractResponse,
-                           NoContentResponse,
-                           AbstractAPIModel)
-from .api.openapi.models import (Operation,
+from swagapi.api.builder.utils import get_schema
+from swagapi.api.builder.common.fields import Field
+from swagapi.api.builder.common.response import NoContentResponse, \
+    AbstractResponse
+from swagapi.api.openapi.models import (Operation,
                                  Parameter,
                                  Path,
                                  Componenets,
