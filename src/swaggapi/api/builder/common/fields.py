@@ -5,17 +5,40 @@ from swaggapi.api.builder.utils import get_schema
 from swaggapi.api.openapi.models import Schema, Example
 from swaggapi.api.builder.common.model import AbstractAPIModel
 
+class DynamicType(object):
+    def __init__(self, class_name, module):
+        self.class_name = class_name
+        self.module = module
+
+    def eval(self):
+        models = __import__(self.module, fromlist=[self.class_name])
+        klass = getattr(models, self.class_name)
+
+        return klass
+
 
 class Field(object):
     def __init__(self, name, type, description="", required=False,
                  example=None, location="body", deprecated=False):
         self.name = name
         self.required = required
-        self.type = type
+        self._type = type
         self.description = description
-        self.example = self.default_example() if example is None else example
+        self._example = example
         self.location = location
         self.deprecated = deprecated
+
+    @property
+    def example(self):
+        return self.default_example() \
+            if self._example is None else self._example
+
+    @property
+    def type(self):
+        if isinstance(self._type, DynamicType):
+            self._type = self._type.eval()
+
+        return self._type
 
     def default_example(self):
         return
@@ -37,8 +60,16 @@ class Field(object):
 
 class ArrayField(Field):
     def __init__(self, name, items_type, *args, **kwargs):
-        self.items_type = items_type
+        self._items_type = items_type
+
         super(ArrayField, self).__init__(name, "array", *args, **kwargs)
+
+    @property
+    def items_type(self):
+        if isinstance(self._items_type, DynamicType):
+            self._items_type = self._items_type.eval()
+
+        return self._items_type
 
     def default_example(self):
         if inspect.isclass(self.items_type):
@@ -95,8 +126,16 @@ class NumberField(Field):
 
 class ModelField(Field):
     def __init__(self, name, model, *args, **kwargs):
-        self.model = model
+        self._model = model
+
         super(ModelField, self).__init__(name, "object", *args, **kwargs)
+
+    @property
+    def model(self):
+        if isinstance(self._model, DynamicType):
+            self._model = self._model.eval()
+
+        return self._model
 
     def default_example(self):
         return self.model.EXAMPLE
