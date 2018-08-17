@@ -3,10 +3,12 @@ import sys
 
 from setuptools import setup, find_packages
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 requirements = [
     'django>=1.7,<1.8',
+    'requests',
+    'attrdict',
     ]
 
 if not sys.platform.startswith("win32"):
