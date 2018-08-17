@@ -24,7 +24,10 @@ class Requester(object):
         try:
             content = response.json() if response.content else {}
         except:
-            return response.content
+            with open('error.html', "w") as f:
+                f.write(response.content)
+
+            raise RuntimeError("Invalid response received!")
 
         response = responses_models[response_code](content)
         response.code = response_code
