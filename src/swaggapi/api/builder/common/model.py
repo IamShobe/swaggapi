@@ -28,7 +28,7 @@ class AbstractAPIModel(object):
                 obj))
 
         keys = obj.keys()
-        if len(keys) < len(cls.PROPERTIES):
+        if len(keys) < len(cls.get_required_props()):
             raise ValueError("Invalid number of properties")
 
         for field in cls.get_required_props():
