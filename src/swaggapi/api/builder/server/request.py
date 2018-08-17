@@ -109,9 +109,6 @@ class DjangoRequestView(View, Request):
             return JsonResponse(e.encode(),
                                 status=httplib.INTERNAL_SERVER_ERROR)
 
-        except Exception as e:
-            raise ServerError(e.message, None, None)
-
     @classmethod
     def implemented_methods(cls):
         return [m.lower() for m in cls.valid_methods if hasattr(cls, m)]

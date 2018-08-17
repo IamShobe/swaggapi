@@ -40,8 +40,5 @@ class Response(JsonResponse):
             response = e.encode()
             status = httplib.INTERNAL_SERVER_ERROR
 
-        except Exception as e:
-            raise ServerError(e.message, None, None)
-
         super(Response, self).__init__(response, status=status, *args,
                                        **kwargs)
