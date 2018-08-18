@@ -3,7 +3,7 @@ import sys
 
 from setuptools import setup, find_packages
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 requirements = [
     'django>=1.7,<1.8',
@@ -23,6 +23,7 @@ setup(
     version=__version__,
     description="Swagger REST API builder",
     long_description=long_description,
+    long_description_content_type='text/markdown',
     license="MIT",
     author="Elran Shefer",
     author_email="elran777@gmail.com",
