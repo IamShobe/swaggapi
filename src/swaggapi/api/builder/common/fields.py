@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+
 import inspect
 from numbers import Number
+
+from six import string_types
 
 from swaggapi.api.builder.utils import get_schema
 from swaggapi.api.openapi.models import Schema, Example
@@ -76,7 +80,7 @@ class ArrayField(Field):
             if issubclass(self.items_type, AbstractAPIModel):
                 return [self.items_type.EXAMPLE]
 
-            elif issubclass(self.items_type, basestring):
+            elif issubclass(self.items_type, string_types):
                 return ["example", "example2"]
 
             elif issubclass(self.items_type, Number):

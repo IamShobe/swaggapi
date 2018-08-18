@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from attrdict import AttrDict
 from swaggapi.api.openapi.models import Example, Schema
 from swaggapi.api.builder.utils import get_schema, isfit

@@ -1,6 +1,8 @@
-import httplib
+from __future__ import absolute_import
+
 import inspect
 
+from six.moves import http_client
 from django.http import JsonResponse
 
 from swaggapi.api.builder.server.exceptions import ServerError
@@ -31,14 +33,14 @@ class Response(JsonResponse):
 
                 except Exception as e:
                     raise ServerError(
-                        details=e.message,
+                        details=str(e),
                         model=str(responses_models[status]),
                         response=response
                     )
 
         except ServerError as e:
             response = e.encode()
-            status = httplib.INTERNAL_SERVER_ERROR
+            status = http_client.INTERNAL_SERVER_ERROR
 
         super(Response, self).__init__(response, status=status, *args,
                                        **kwargs)

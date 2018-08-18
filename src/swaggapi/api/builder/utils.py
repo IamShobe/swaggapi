@@ -1,5 +1,8 @@
+from __future__ import absolute_import
+
 from numbers import Number
 
+from six import string_types
 from swaggapi.api.openapi.models import Referance
 
 
@@ -25,7 +28,7 @@ def isfit(obj, class_name):
                                                     NumberField,
                                                     ModelField, ArrayField)
     if isinstance(class_name, StringField):
-        return isinstance(obj, basestring)
+        return isinstance(obj, string_types)
 
     elif isinstance(class_name, BoolField):
         return isinstance(obj, bool)

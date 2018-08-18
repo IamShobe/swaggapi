@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+
 import os
 import json
-import httplib
 
 import requests
+from six.moves import http_client
 from django.http import JsonResponse
 from django.views.generic import View
 
@@ -53,7 +55,7 @@ class Request(object):
 
         if logger:
             logger.debug("response: %s(%s) - %s",
-                         httplib.responses[response.status_code],
+                         http_client.responses[response.status_code],
                          response.status_code,
                          response.content)
 
@@ -82,7 +84,7 @@ class DjangoRequestView(View, Request):
 
                 except Exception as e:
                     raise ServerError(
-                        details=e.message,
+                        details=str(e),
                         model=model,
                         response=request.body
                     )
@@ -91,7 +93,7 @@ class DjangoRequestView(View, Request):
 
                 except Exception as e:
                     raise ServerError(
-                        details=e.message,
+                        details=str(e),
                         model=model,
                         response=request_params
                     )
@@ -102,12 +104,12 @@ class DjangoRequestView(View, Request):
                 request, *args, **kwargs)
 
         except BadRequest as e:
-            return JsonResponse(e.message,
-                                status=httplib.BAD_REQUEST)
+            return JsonResponse(str(e),
+                                status=http_client.BAD_REQUEST)
 
         except ServerError as e:
             return JsonResponse(e.encode(),
-                                status=httplib.INTERNAL_SERVER_ERROR)
+                                status=http_client.INTERNAL_SERVER_ERROR)
 
     @classmethod
     def implemented_methods(cls):

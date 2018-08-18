@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from .types import (DynamicType,
                     OneOf,
                     MultiTypeList,

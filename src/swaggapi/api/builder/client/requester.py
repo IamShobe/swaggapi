@@ -1,5 +1,7 @@
-import json
+from __future__ import absolute_import
+
 import os
+import json
 
 from django.test import Client
 from swaggapi.api.builder.common.model import AbstractAPIModel

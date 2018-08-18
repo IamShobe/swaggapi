@@ -1,6 +1,10 @@
-import json
+from __future__ import absolute_import
+
 import re
+import json
 from textwrap import TextWrapper
+
+from six import add_metaclass
 
 from .utils import is_instance
 
@@ -131,9 +135,8 @@ class StaticOpenAPIMetaClass(type):
         raise OpenAPIError("No item {} in fields dict".format(item))
 
 
+@add_metaclass(StaticOpenAPIMetaClass)
 class StaticOpenAPIObject(OpenAPIObject):
-    __metaclass__ = StaticOpenAPIMetaClass
-
     fields = NotImplemented
 
     def __init__(self, **kwargs):
