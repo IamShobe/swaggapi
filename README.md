@@ -26,7 +26,7 @@ class AbstractAPIModel(object):
 Your model should inherit from this object.
 Examples:
 ```Python
-class EmptyModel(AbstractAPIModel):  
+class GenericModel(AbstractAPIModel):  
   """This is an empty model."""
   TITLE = "Generic Object"  
   PROPERTIES = []  

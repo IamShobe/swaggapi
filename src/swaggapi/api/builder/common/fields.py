@@ -142,7 +142,14 @@ class ModelField(Field):
         return self._model
 
     def default_example(self):
-        return self.model.EXAMPLE
+        if self.model.EXAMPLE is not None:
+            return self.model.EXAMPLE
+
+        example = {}
+        for property in self.model.PROPERTIES:
+            example[property.name] = property.example
+
+        return example
 
     def ref_name(self):
         return self.model.ref_name()
