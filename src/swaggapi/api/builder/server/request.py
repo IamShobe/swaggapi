@@ -104,7 +104,7 @@ class DjangoRequestView(View, Request):
                 request, *args, **kwargs)
 
         except BadRequest as e:
-            return JsonResponse(str(e),
+            return JsonResponse({"details": str(e)},
                                 status=http_client.BAD_REQUEST)
 
         except ServerError as e:
