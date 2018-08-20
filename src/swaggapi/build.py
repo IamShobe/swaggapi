@@ -7,13 +7,18 @@ from django.views.decorators.csrf import csrf_exempt
 
 from swaggapi.api.builder.utils import get_schema
 from swaggapi.api.builder.common.fields import Field
-from swaggapi.api.builder.common.response import NoContentResponse, \
-    AbstractResponse
+from swaggapi.api.builder.common.response import (NoContentResponse,
+                                                  AbstractResponse)
 from swaggapi.api.openapi.models import (Operation,
                                          Parameter,
                                          Path,
                                          Componenets,
-                                         OpenAPI, RequestBody, Media, Schema, Server)
+                                         OpenAPI,
+                                         RequestBody,
+                                         Media,
+                                         Schema,
+                                         Server,
+                                         Example)
 
 
 class Swagger(object):
@@ -46,7 +51,7 @@ class Swagger(object):
         params = []
         body_content = {}
         required_fields = []
-        example = {}
+        example = None
         if param_model is not None:
             for param in param_model.PROPERTIES:
                 if not isinstance(param, Field):
@@ -54,8 +59,11 @@ class Swagger(object):
                         Field.__name__, type(param)))
 
                 schema = get_schema(param, self.scheme_bank, "schemas")
-                example[param.name] = param.example
                 if param.location is "body":
+                    if example is None:
+                        example = {}
+
+                    example[param.name] = param.example
                     body_content[param.name] = schema
                     required_fields.append(param.name)
 
@@ -63,8 +71,11 @@ class Swagger(object):
                     params.append(Parameter(name=param.name,
                                             description=param.description,
                                             required=param.required,
-                                            schema=schema,
-                                            examples=param.example,
+                                            schema=[schema],
+                                            examples={
+                                                "default":
+                                                    Example(
+                                                        value=param.example)},
                                             deprecated=param.deprecated,
                                             **{"in": param.location}))
 
@@ -108,7 +119,8 @@ class Swagger(object):
 
             for method in methods:
                 description = request.__doc__
-                summary = description.split("\n", 1)[0] if description else None
+                summary = description.split("\n", 1)[
+                    0] if description else None
 
                 params = parameters
                 request_body = None

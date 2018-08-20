@@ -2,8 +2,10 @@ from __future__ import absolute_import
 
 import os
 import json
+import urllib
 
 from django.test import Client
+from swaggapi.api.builder.utils import get_dict_leafs
 from swaggapi.api.builder.common.model import AbstractAPIModel
 
 
@@ -13,9 +15,16 @@ class Requester(object):
                                      base_url)
         self.logger = logger
 
-    def make_request(self, request_type, method, data):
-        response = request_type.execute(self.base_url, method,
-                                        data.obj, logger=self.logger)
+    def make_request(self, request_type, method, data=None):
+        if data is None:
+            response = request_type.execute(self.base_url, method,
+                                            logger=self.logger)
+
+        else:
+            response = request_type.execute(self.base_url, method,
+                                            data.body,
+                                            get_dict_leafs(data.params),
+                                            logger=self.logger)
         try:
             content = response.json() if response.content else {}
 
@@ -27,11 +36,12 @@ class Requester(object):
 
         return response, content
 
-    def request(self, request_type, method, data):
-        if not isinstance(data, AbstractAPIModel):
+    def request(self, request_type, method, data=None):
+        if data is not None and not isinstance(data, AbstractAPIModel):
             raise ValueError("data must be an instance of AbstractAPIModel!")
 
-        response, content = self.make_request(request_type, method, data)
+        response, content = \
+            self.make_request(request_type, method, data)
 
         response_code = response.status_code
         responses_models = request_type.RESPONSES_MODELS[method]
@@ -50,10 +60,18 @@ class TestRequester(Requester):
         super(TestRequester, self).__init__(host, port, base_url, logger)
         self.client = Client()
 
-    def make_request(self, request_type, method, data):
+    def make_request(self, request_type, method, data=None):
+        params = ""
+        if data and data.params:
+            params = urllib.urlencode(
+                {key: str(value) for key, value in get_dict_leafs(
+                    data.params).items()})
+
         response = self.client.generic(
-            method, os.path.join(self.base_url, request_type.URI),
-            data=json.dumps(data.obj),
+            method,
+            "{}?{}".format(os.path.join(self.base_url, request_type.URI),
+                           params),
+            data=json.dumps(data.body) if data else None,
             content_type="application/json")
 
         try:

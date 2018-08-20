@@ -4,6 +4,7 @@ import os
 import json
 
 import requests
+from attrdict import AttrDict
 from six.moves import http_client
 from django.http import JsonResponse
 from django.views.generic import View
@@ -46,12 +47,13 @@ class Request(object):
     valid_methods = ["get", "post", "delete", "put", "head", "patch", "trace"]
 
     @classmethod
-    def execute(cls, base_url, method, data, logger=None):
+    def execute(cls, base_url, method, data, params=None, logger=None):
         url = os.path.join(base_url, cls.URI)
         if logger:
-            logger.debug("request: %s - %s - %s", url, method, data)
+            logger.debug("request: %s - %s - %s - %s", url, method, data,
+                         params)
 
-        response = requests.request(method, url, json=data)
+        response = requests.request(method, url, json=data, params=params)
 
         if logger:
             logger.debug("response: %s(%s) - %s",
@@ -80,7 +82,10 @@ class DjangoRequestView(View, Request):
 
             if model is not None and issubclass(model, AbstractAPIModel):
                 try:
-                    request_params = json.loads(request.body)
+                    request_params = {}
+                    if request.body.startswith("{"):
+                        request_params = json.loads(request.body)
+                    request_params.update(dict(request.GET))
 
                 except Exception as e:
                     raise ServerError(
@@ -104,7 +109,7 @@ class DjangoRequestView(View, Request):
                 request, *args, **kwargs)
 
         except BadRequest as e:
-            return JsonResponse({"details": str(e)},
+            return JsonResponse(e.encode(),
                                 status=http_client.BAD_REQUEST)
 
         except ServerError as e:

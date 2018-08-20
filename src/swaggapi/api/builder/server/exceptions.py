@@ -14,5 +14,11 @@ class ServerError(Exception):
 
 
 class BadRequest(Exception):
-    pass
+    def __init__(self, message, **kwargs):
+        self.kwargs = kwargs
+        self.message = message
 
+    def encode(self):
+        encoded ={"details": self.message}
+        encoded.update(self.kwargs)
+        return encoded

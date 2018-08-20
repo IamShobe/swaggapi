@@ -6,6 +6,23 @@ from six import string_types
 from swaggapi.api.openapi.models import Referance
 
 
+def get_dict_leafs(dict_a):
+    if not isinstance(dict_a, dict):
+        raise RuntimeError("parameter should be dict!")
+
+    leafs = {}
+    def _inner(a_dict, leafs_dict):
+        for key, value in a_dict.items():
+            if isinstance(value, dict):
+                _inner(value, leafs_dict)
+
+            else:
+                leafs_dict[key] = value
+
+    _inner(dict_a, leafs)
+
+    return leafs
+
 def get_schema(model, schema_bank, type, index=None):
     ref_name = model.ref_name()
     if index is not None:
