@@ -3,13 +3,14 @@ from __future__ import absolute_import
 from attrdict import AttrDict
 from swaggapi.api.openapi.models import Example, Schema
 from swaggapi.api.builder.utils import get_schema, isfit
+import six
 
 
 NAME2TYPE = {
     "str": str,
-    "string": unicode,
-    "basestring": unicode,
-    "unicode": unicode,
+    "string": six.text_type,
+    "basestring": six.text_type,
+    "unicode": six.text_type,
     "bool": bool,
     "boolean": bool,
     "int": int,
@@ -92,7 +93,7 @@ class AbstractAPIModel(object):
             raise ValueError("Object must be of type dict! given {}".format(
                 obj))
 
-        keys = obj.keys()
+        keys = list(obj.keys())
         if len(keys) < len(cls.get_required_props()):
             raise ValueError("Invalid number of properties")
 
