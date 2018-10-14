@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import os
 import json
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 from django.test import Client
 from swaggapi.api.builder.utils import get_dict_leafs
@@ -63,7 +63,7 @@ class TestRequester(Requester):
     def make_request(self, request_type, method, data=None):
         params = ""
         if data and data.params:
-            params = urllib.urlencode(
+            params = six.moves.urllib.parse.urlencode(
                 {key: str(value) for key, value in get_dict_leafs(
                     data.params).items()})
 

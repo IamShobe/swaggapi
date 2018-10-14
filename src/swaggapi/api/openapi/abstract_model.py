@@ -50,7 +50,7 @@ class OpenAPIObject(object):
 
     def __dir__(self):
         res = dir(type(self)) + list(self.__dict__.keys())
-        return res + self.kwargs.keys()
+        return res + list(self.kwargs.keys())
 
     def json(self):
         return json.loads(json.dumps(self, cls=OpenAPIEncoder, indent=4))
@@ -122,7 +122,7 @@ class StaticOpenAPIMetaClass(type):
 
     def __dir__(self):
         return dir(type(self)) + list(self.__dict__.keys()) + \
-               self.fields_dict.keys()
+               list(self.fields_dict.keys())
 
     @property
     def required_fields(cls):
@@ -145,7 +145,7 @@ class StaticOpenAPIObject(OpenAPIObject):
     
     def __setattr__(self, key, value):
         fields_dict = {field.name: field for field in self.fields}
-        if key in fields_dict.keys():
+        if key in list(fields_dict.keys()):
             if not is_instance(value, fields_dict[key].type):
                 raise OpenAPIError(
                     "Invalid value given! Must be of type: {}".format(
@@ -181,7 +181,7 @@ class StaticOpenAPIObject(OpenAPIObject):
                     static_field, value, static_field.type))
 
     def validate_no_extra(self):
-        all_fields_names = self.fields_dict.keys()
+        all_fields_names = list(self.fields_dict.keys())
         for field in self.static_fields.keys():
             if field not in all_fields_names:
                 raise RuntimeError("{} object doesn't have {} field in its "
@@ -198,7 +198,7 @@ class PatternedStaticOpenAPIObject(StaticOpenAPIObject,
                                    PatternedOpenAPIObject):
     @property
     def pattern_fields(self):
-        pattern_keys = self.kwargs.keys()
+        pattern_keys = list(self.kwargs.keys())
         for field in self.fields:
             if field.name in pattern_keys:
                 pattern_keys.remove(field.name)
@@ -207,7 +207,7 @@ class PatternedStaticOpenAPIObject(StaticOpenAPIObject,
 
     @property
     def static_fields(self):
-        pattern_keys = self.pattern_fields.keys()
+        pattern_keys = list(self.pattern_fields.keys())
 
         return {key: self.kwargs[key] for key in self.kwargs
                 if key not in pattern_keys}

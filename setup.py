@@ -1,12 +1,13 @@
 """Setup file for handling packaging and distribution."""
+from __future__ import absolute_import
 import sys
 
 from setuptools import setup, find_packages
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 requirements = [
-    'django>=1.7,<1.8',
+    'django>=1.8,<1.9',
     'requests',
     'attrdict',
     'six'
