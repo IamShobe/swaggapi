@@ -92,7 +92,7 @@ class Swagger(object):
             if issubclass(model, AbstractResponse):
                 resp = model
 
-            return_dict[str(response)] = resp.encode(self.scheme_bank)
+            return_dict[str(int(response))] = resp.encode(self.scheme_bank)
 
         return return_dict
 

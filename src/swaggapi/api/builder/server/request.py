@@ -4,7 +4,6 @@ import os
 import json
 
 import requests
-from attrdict import AttrDict
 from six.moves import http_client
 from django.http import JsonResponse
 from django.views.generic import View
@@ -83,8 +82,9 @@ class DjangoRequestView(View, Request):
             if model is not None and issubclass(model, AbstractAPIModel):
                 try:
                     request_params = {}
-                    if request.body.startswith("{"):
-                        request_params = json.loads(request.body)
+                    body = request.body.decode("utf-8")
+                    if body.startswith("{"):
+                        request_params = json.loads(body)
                     request_params.update(dict(request.GET))
 
                 except Exception as e:
@@ -102,7 +102,6 @@ class DjangoRequestView(View, Request):
                         model=model,
                         response=request_params
                     )
-
 
             request.model = model
             return super(DjangoRequestView, self).dispatch(

@@ -73,9 +73,7 @@ def is_instance(value, class_name):
             if any(is_instance(value, klass) for klass in class_name):
                 return True
 
-
         elif issubclass(class_name, PatternedOpenAPIObject):
             return class_name.is_matched(value)
-
 
         return isinstance(value, class_name)

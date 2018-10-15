@@ -4,17 +4,15 @@ import sys
 
 from setuptools import setup, find_packages
 
-__version__ = "0.6.1"
+__version__ = "0.6.4"
 
 requirements = [
-    'django>=1.8,<1.9',
+    'django>=1.7,<1.9',
     'requests',
     'attrdict',
     'six'
-    ]
+]
 
-if not sys.platform.startswith("win32"):
-    requirements.append('python-daemon')
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
