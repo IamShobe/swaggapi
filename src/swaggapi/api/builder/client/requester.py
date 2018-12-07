@@ -74,9 +74,11 @@ class TestRequester(Requester):
             data=json.dumps(data.body) if data else None,
             content_type="application/json")
 
+        response_content = response.content.decode("utf-8")
+
         try:
-            return response, json.loads(response.content)
+            return response, json.loads(response_content)
 
         except:
             return (response,
-             response.content if response.content != "" else {})
+                    response_content if response_content != "" else {})
