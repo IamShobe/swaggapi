@@ -10,6 +10,7 @@ from swaggapi.api.builder.server.exceptions import ServerError
 
 class Response(JsonResponse):
     def __init__(self, response, status, *args, **kwargs):
+        status = int(status)
         stack = inspect.stack()
         the_class = stack[1][0].f_locals["self"].__class__
         the_method = stack[1][0].f_code.co_name
@@ -40,7 +41,7 @@ class Response(JsonResponse):
 
         except ServerError as e:
             response = e.encode()
-            status = http_client.INTERNAL_SERVER_ERROR
+            status = int(http_client.INTERNAL_SERVER_ERROR)
 
         super(Response, self).__init__(response, status=status, *args,
                                        **kwargs)
