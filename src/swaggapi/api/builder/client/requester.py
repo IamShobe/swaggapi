@@ -28,11 +28,12 @@ class Requester(object):
         try:
             content = response.json() if response.content else {}
 
-        except:
+        except Exception:
             with open('error.html', "w") as f:
-                f.write(response.content)
+                f.write(response.content.decode())
 
-            raise RuntimeError("Invalid response received!")
+            raise RuntimeError("Got invalid response from server - {}".format(
+                response.status_code))
 
         return response, content
 

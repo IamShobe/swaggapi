@@ -109,11 +109,11 @@ class DjangoRequestView(View, Request):
 
         except BadRequest as e:
             return JsonResponse(e.encode(),
-                                status=http_client.BAD_REQUEST)
+                                status=int(http_client.BAD_REQUEST))
 
         except ServerError as e:
             return JsonResponse(e.encode(),
-                                status=http_client.INTERNAL_SERVER_ERROR)
+                                status=int(http_client.INTERNAL_SERVER_ERROR))
 
     @classmethod
     def implemented_methods(cls):
