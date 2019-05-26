@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 __version__ = "0.6.6"
 
 requirements = [
-    'django>=1.7,<1.9',
+    'django>=1.7',
     'requests',
     'attrdict',
     'six'
