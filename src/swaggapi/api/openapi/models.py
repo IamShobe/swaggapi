@@ -1,9 +1,11 @@
 from __future__ import absolute_import
+import re
 
 from django.db.migrations.operations.base import Operation
 
 from .abstract_model import (StaticOpenAPIObject,
                              OpenAPIField,
+                             OpenAPIError,
                              PatternedOpenAPIObject,
                              OpenAPIPattern,
                              PatternedStaticOpenAPIObject)
@@ -12,16 +14,17 @@ from .types import (Map,
                     MultiTypeList,
                     Enum,
                     OneOf,
-                    DynamicType)
+                    DynamicType,
+                    string_type)
 
 
 class ExternalDocumentation(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="A short description of the target "
                                  "documentation. CommonMark syntax MAY be "
                                  "used for rich text representation."),
-        OpenAPIField(name="url", type=str, required=True,
+        OpenAPIField(name="url", type=string_type, required=True,
                      description="The URL for the target "
                                  "documentation. Value MUST be in the format"
                                  " of a URL.")
@@ -30,9 +33,9 @@ class ExternalDocumentation(StaticOpenAPIObject):
 
 class Tag(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="name", type=str, required=True,
+        OpenAPIField(name="name", type=string_type, required=True,
                      description="The name of the tag."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="A short description for the tag. "
                                  "CommonMark syntax MAY be used for rich "
                                  "text representation."),
@@ -44,9 +47,9 @@ class Tag(StaticOpenAPIObject):
 
 class License(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="name", type=str, required=True,
+        OpenAPIField(name="name", type=string_type, required=True,
                      description="The license name used for the API."),
-        OpenAPIField(name="url", type=str,
+        OpenAPIField(name="url", type=string_type,
                      description="A URL to the license used for the API."
                                  " MUST be in the format of a URL.")
     ]
@@ -54,14 +57,14 @@ class License(StaticOpenAPIObject):
 
 class Contact(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="name", type=str,
+        OpenAPIField(name="name", type=string_type,
                      description="The identifying name of the contact "
                                  "person/organization."),
-        OpenAPIField(name="url", type=str,
+        OpenAPIField(name="url", type=string_type,
                      description="The URL pointing to the contact "
                                  "information. "
                                  "MUST be in the format of a URL."),
-        OpenAPIField(name="email", type=str,
+        OpenAPIField(name="email", type=string_type,
                      description="The email address of the contact "
                                  "person/organization."
                                  " MUST be in the format of an email "
@@ -71,13 +74,13 @@ class Contact(StaticOpenAPIObject):
 
 class Info(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="title", type=str, required=True,
+        OpenAPIField(name="title", type=string_type, required=True,
                      description="The title of the application."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="A short description of the "
                                  "application. CommonMark syntax MAY be "
                                  "used for rich text representation."),
-        OpenAPIField(name="termsOfService", type=str,
+        OpenAPIField(name="termsOfService", type=string_type,
                      description="A URL to the Terms of Service for "
                                  "the API. "
                                  "MUST be in the format of a URL."),
@@ -87,7 +90,7 @@ class Info(StaticOpenAPIObject):
         OpenAPIField(name="license", type=License,
                      description="The license information for the "
                                  "exposed API."),
-        OpenAPIField(name="version", type=str, required=True,
+        OpenAPIField(name="version", type=string_type, required=True,
                      description="The version of the OpenAPI document "
                                  "(which is distinct from the OpenAPI "
                                  "Specification version or the API "
@@ -97,18 +100,18 @@ class Info(StaticOpenAPIObject):
 
 class ServerVariable(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="enum", type=List(str),
+        OpenAPIField(name="enum", type=List(string_type),
                      description="An enumeration of string values to "
                                  "be used if the substitution options "
                                  "are from a limited set."),
-        OpenAPIField(name="default", type=str, required=True,
+        OpenAPIField(name="default", type=string_type, required=True,
                      description="The default value to use for "
                                  "substitution, and to send, if an "
                                  "alternate value is not supplied. "
                                  "Unlike the Schema Object's default, "
                                  "this value MUST be provided by the "
                                  "consumer."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="An optional description for "
                                  "the server variable. CommonMark "
                                  "syntax MAY be used for rich text "
@@ -118,7 +121,7 @@ class ServerVariable(StaticOpenAPIObject):
 
 class Server(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="url", type=str, required=True,
+        OpenAPIField(name="url", type=string_type, required=True,
                      description=" A URL to the target host. "
                                  "This URL supports Server Variables "
                                  "and MAY be relative, to indicate "
@@ -127,12 +130,12 @@ class Server(StaticOpenAPIObject):
                                  "document is being served. Variable "
                                  "substitutions will be made when a "
                                  "variable is named in {brackets}."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="An optional string describing the "
                                  "host designated by the URL. "
                                  "CommonMark syntax MAY be used for "
                                  "rich text representation."),
-        OpenAPIField(name="variables", type=Map(str, ServerVariable),
+        OpenAPIField(name="variables", type=Map(string_type, ServerVariable),
                      description="A map between a variable name and "
                                  "its value. The value is used for "
                                  "substitution in the server's "
@@ -142,21 +145,27 @@ class Server(StaticOpenAPIObject):
 
 class Referance(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="$ref", type=str, required=True,
+        OpenAPIField(name="$ref", type=string_type, required=True,
                      description="The reference string.")
     ]
-    def __init__(self, reference, type, **kwargs):
-        self.reference = reference
-        self.type = type
+    def __init__(self, **kwargs):
+        match = re.match("#/components/(?P<type>.+?)/(?P<reference>.+)",
+                         kwargs["$ref"])
+
+        if not match:
+            raise OpenAPIError("invalid reference template!")
+
+        self.reference = match.group("reference")
+        self.type = match.group("type")
         super(Referance, self).__init__(**kwargs)
 
 
 class Discriminator(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="propertyName", type=str, required=True,
+        OpenAPIField(name="propertyName", type=string_type, required=True,
                      description="The name of the property in the payload "
                                  "that will hold the discriminator value."),
-        OpenAPIField(name="mapping", type=Map(str, str),
+        OpenAPIField(name="mapping", type=Map(string_type, string_type),
                      description="An object to hold mappings between payload "
                                  "values and schema names or references.")
     ]
@@ -164,7 +173,7 @@ class Discriminator(StaticOpenAPIObject):
 
 class XML(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="name", type=str,
+        OpenAPIField(name="name", type=string_type,
                      description="Replaces the name of the element/attribute "
                                  "used for the described schema property. "
                                  "When defined within items, it will affect "
@@ -174,10 +183,10 @@ class XML(StaticOpenAPIObject):
                                  "it will affect the wrapping element and "
                                  "only if wrapped is true. If wrapped is "
                                  "false, it will be ignored."),
-        OpenAPIField(name="namespace", type=str,
+        OpenAPIField(name="namespace", type=string_type,
                      description="The URI of the namespace definition. Value "
                                  "MUST be in the form of an absolute URI."),
-        OpenAPIField(name="prefix", type=str,
+        OpenAPIField(name="prefix", type=string_type,
                      description="The prefix to be used for the name."),
         OpenAPIField(name="attribute", type=bool, default=False,
                      description="Declares whether the property definition "
@@ -197,9 +206,9 @@ class XML(StaticOpenAPIObject):
 
 class Example(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="summary", type=str,
+        OpenAPIField(name="summary", type=string_type,
                      description="Short description for the example."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="Long description for the example. "
                                  "CommonMark syntax MAY be used for rich "
                                  "text representation."),
@@ -211,7 +220,7 @@ class Example(StaticOpenAPIObject):
                                  "JSON or YAML, use a string value to "
                                  "contain the example, escaping where "
                                  "necessary."),
-        OpenAPIField(name="externalValue", type=str,
+        OpenAPIField(name="externalValue", type=string_type,
                      description="A URL that points to the literal example. "
                                  "This provides the capability to reference "
                                  "examples that cannot easily be included in "
@@ -223,7 +232,7 @@ class Example(StaticOpenAPIObject):
 
 class Schema(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="title", type=str,
+        OpenAPIField(name="title", type=string_type,
                      description="Used to "
                                  "decorate a user interface with information "
                                  "about the data produced by this user "
@@ -247,7 +256,7 @@ class Schema(StaticOpenAPIObject):
                      description="A string instance is valid against this "
                                  "keyword if its length is less than, "
                                  "or equal to, the value of this keyword."),
-        OpenAPIField(name="pattern", type=str,
+        OpenAPIField(name="pattern", type=string_type,
                      description="The value of this keyword MUST be a "
                                  "string. This string SHOULD be a valid "
                                  "regular expression, according to the ECMA "
@@ -280,7 +289,7 @@ class Schema(StaticOpenAPIObject):
                                  '"minProperties" if its number of '
                                  'properties is greater than, or equal to, '
                                  'the value of this keyword.'),
-        OpenAPIField(name="required", type=List(str), default=[],
+        OpenAPIField(name="required", type=List(string_type), default=[],
                      description="The value of this keyword MUST be an "
                                  "array. Elements of this array, if any, "
                                  "MUST be strings, and MUST be unique."
@@ -295,7 +304,7 @@ class Schema(StaticOpenAPIObject):
                                  "against this keyword if its value is equal "
                                  "to one of the elements in this keyword's "
                                  "array value."),
-        OpenAPIField(name="type", type=str,
+        OpenAPIField(name="type", type=string_type,
                      description="Value MUST be a string. Multiple types via "
                                  "an array are not supported."),
         OpenAPIField(name="allOf", type=OneOf((Referance,
@@ -330,7 +339,7 @@ class Schema(StaticOpenAPIObject):
                                  "array successfully validate against that "
                                  "schema."),
         OpenAPIField(name="properties",
-                     type=Map(str, OneOf((Referance, DynamicType("Schema")))),
+                     type=Map(string_type, OneOf((Referance, DynamicType("Schema")))),
                      description="This keyword determines how child "
                                  "instances validate for objects, and does "
                                  "not directly validate the immediate "
@@ -341,7 +350,7 @@ class Schema(StaticOpenAPIObject):
                                  "instance for that name successfully "
                                  "validates against the corresponding "
                                  "schema."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="CommonMark syntax MAY be used for rich "
                                  "text representation"),
         OpenAPIField(name="format", type=Enum(["int32", "int64", "float",
@@ -415,10 +424,10 @@ class Schema(StaticOpenAPIObject):
 
 class Encoding(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="contentType", type=str,
+        OpenAPIField(name="contentType", type=string_type,
                      description="The Content-Type for encoding a specific "
                                  "property."),
-        OpenAPIField(name="headers", type=Map(str,
+        OpenAPIField(name="headers", type=Map(string_type,
                                               OneOf([Referance,
                                                      DynamicType("Header")])
                                               ),
@@ -429,7 +438,7 @@ class Encoding(StaticOpenAPIObject):
                                  "in this section. This property SHALL be "
                                  "ignored if the request body media type is "
                                  "not a multipart."),
-        OpenAPIField(name="style", type=str,
+        OpenAPIField(name="style", type=string_type,
                      description="Describes how a specific property value "
                                  "will be serialized depending on its type. "
                                  "See Parameter Object for details on the "
@@ -476,7 +485,7 @@ class Media(StaticOpenAPIObject):
                                  "if referencing a schema which contains an "
                                  "example, the example value SHALL override "
                                  "the example provided by the schema."),
-        OpenAPIField(name="examples", type=Map(str,
+        OpenAPIField(name="examples", type=Map(string_type,
                                                OneOf([Example, Referance])),
                      description="Examples of the media type. Each example "
                                  "object SHOULD match the media type and "
@@ -486,7 +495,7 @@ class Media(StaticOpenAPIObject):
                                  "schema which contains an example, "
                                  "the examples value SHALL override the "
                                  "example provided by the schema."),
-        OpenAPIField(name="encoding", type=Map(str, Encoding),
+        OpenAPIField(name="encoding", type=Map(string_type, Encoding),
                      description="A map between a property name and its "
                                  "encoding information. The key, being the "
                                  "property name, MUST exist in the schema as "
@@ -500,12 +509,12 @@ class Media(StaticOpenAPIObject):
 
 class RequestBody(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="	A brief description of the request body. "
                                  "This could contain examples of use. "
                                  "CommonMark syntax MAY be used for rich "
                                  "text representation."),
-        OpenAPIField(name="content", type=Map(str, Media), required=True,
+        OpenAPIField(name="content", type=Map(string_type, Media), required=True,
                      description="The content of the request body. "
                                  "The key is a media type or media type "
                                  "range and the value describes it. For "
@@ -520,7 +529,7 @@ class RequestBody(StaticOpenAPIObject):
 
 class Parameter(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="name", type=str, required=True,
+        OpenAPIField(name="name", type=string_type, required=True,
                      description='The name of the parameter. Parameter names '
                                  'are case sensitive.\n'
                                  'If in is "path", the name field MUST '
@@ -541,7 +550,7 @@ class Parameter(StaticOpenAPIObject):
                      description='The location of the parameter. Possible '
                                  'values are "query", "header", "path" or '
                                  '"cookie".'),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="	A brief description of the parameter. "
                                  "This could contain examples of use. "
                                  "CommonMark syntax MAY be used for rich "
@@ -574,7 +583,7 @@ class Parameter(StaticOpenAPIObject):
                                  "naturally represented in JSON or YAML, "
                                  "a string value can be used to contain the "
                                  "example with escaping where necessary."),
-        OpenAPIField(name="examples", type=Map(str,
+        OpenAPIField(name="examples", type=Map(string_type,
                                                OneOf([Example, Referance])),
                      description="Examples of the media type. Each example "
                                  "SHOULD contain a value in the correct "
@@ -585,7 +594,7 @@ class Parameter(StaticOpenAPIObject):
                                  "contains an example, the examples value "
                                  "SHALL override the example provided by the "
                                  "schema."),
-        OpenAPIField(name="content", type=Map(str, Media),
+        OpenAPIField(name="content", type=Map(string_type, Media),
                      description="A map containing the representations for "
                                  "the parameter. The key is the media type "
                                  "and the value describes it. The map MUST "
@@ -595,7 +604,7 @@ class Parameter(StaticOpenAPIObject):
 
 class Header(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="	A brief description of the parameter. "
                                  "This could contain examples of use. "
                                  "CommonMark syntax MAY be used for rich "
@@ -628,7 +637,7 @@ class Header(StaticOpenAPIObject):
                                  "naturally represented in JSON or YAML, "
                                  "a string value can be used to contain the "
                                  "example with escaping where necessary."),
-        OpenAPIField(name="examples", type=Map(str,
+        OpenAPIField(name="examples", type=Map(string_type,
                                                OneOf([Example, Referance])),
                      description="Examples of the media type. Each example "
                                  "SHOULD contain a value in the correct "
@@ -639,7 +648,7 @@ class Header(StaticOpenAPIObject):
                                  "contains an example, the examples value "
                                  "SHALL override the example provided by the "
                                  "schema."),
-        OpenAPIField(name="content", type=Map(str, Media),
+        OpenAPIField(name="content", type=Map(string_type, Media),
                      description="A map containing the representations for "
                                  "the parameter. The key is the media type "
                                  "and the value describes it. The map MUST "
@@ -649,7 +658,7 @@ class Header(StaticOpenAPIObject):
 
 class Link(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="operationRef", type=str,
+        OpenAPIField(name="operationRef", type=string_type,
                      description="A relative or absolute reference to an OAS "
                                  "operation. This field is mutually "
                                  "exclusive of the operationId field, "
@@ -657,12 +666,12 @@ class Link(StaticOpenAPIObject):
                                  "Relative operationRef values MAY be used "
                                  "to locate an existing Operation Object in "
                                  "the OpenAPI definition."),
-        OpenAPIField(name="operationId", type=str,
+        OpenAPIField(name="operationId", type=string_type,
                      description="The name of an existing, resolvable OAS "
                                  "operation, as defined with a unique "
                                  "operationId. This field is mutually "
                                  "exclusive of the operationRef field."),
-        OpenAPIField(name="parameters", type=Map(str, object),
+        OpenAPIField(name="parameters", type=Map(string_type, object),
                      description="A map representing parameters to pass to "
                                  "an operation as specified with operationId "
                                  "or identified via operationRef. The key is "
@@ -677,7 +686,7 @@ class Link(StaticOpenAPIObject):
         OpenAPIField(name="requestBody", type=OneOf([RequestBody, Referance]),
                      description="A literal value or to use as a request "
                                  "body when calling the target operation."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="	A description of the link. CommonMark "
                                  "syntax MAY be used for rich text "
                                  "representation."),
@@ -689,11 +698,11 @@ class Link(StaticOpenAPIObject):
 
 class Response(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="description", type=str, required=True,
+        OpenAPIField(name="description", type=string_type, required=True,
                      description="A short description of the response. "
                                  "CommonMark syntax MAY be used for rich "
                                  "text representation."),
-        OpenAPIField(name="headers", type=Map(str,
+        OpenAPIField(name="headers", type=Map(string_type,
                                               OneOf([Referance,
                                                      DynamicType("Header")])
                                               ),
@@ -702,7 +711,7 @@ class Response(StaticOpenAPIObject):
                                  "insensitive. If a response header is "
                                  "defined with the name 'Content-Type', "
                                  "it SHALL be ignored."),
-        OpenAPIField(name="content", type=Map(str, Media),
+        OpenAPIField(name="content", type=Map(string_type, Media),
                      description="A map containing descriptions of potential "
                                  "response payloads. The key is a media type "
                                  "or media type range and the value "
@@ -710,7 +719,7 @@ class Response(StaticOpenAPIObject):
                                  "multiple keys, only the most specific key "
                                  "is applicable. e.g. text/plain overrides "
                                  "text/*"),
-        OpenAPIField(name="links", type=Map(str, OneOf([Referance,
+        OpenAPIField(name="links", type=Map(string_type, OneOf([Referance,
                                                         Link])),
                      description="A map of operations links that can be "
                                  "followed from the response. The key of the "
@@ -767,7 +776,7 @@ class CallBack(PatternedOpenAPIObject):
 
 class SecurityRequirement(PatternedOpenAPIObject):
     patterns = [
-        OpenAPIPattern(pattern=r".*", type=List(str),
+        OpenAPIPattern(pattern=r".*", type=List(string_type),
                        description='Each name MUST correspond to a security '
                                    'scheme which is declared in the Security '
                                    'Schemes under the Components Object. If '
@@ -781,22 +790,22 @@ class SecurityRequirement(PatternedOpenAPIObject):
 
 class Operation(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="tags", type=List(str),
+        OpenAPIField(name="tags", type=List(string_type),
                      description="A list of tags for API documentation "
                                  "control. Tags can be used for logical "
                                  "grouping of operations by resources or any "
                                  "other qualifier."),
-        OpenAPIField(name="summary", type=str,
+        OpenAPIField(name="summary", type=string_type,
                      description="A short summary of what the operation "
                                  "does."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="	A verbose explanation of the operation "
                                  "behavior. CommonMark syntax MAY be used "
                                  "for rich text representation."),
         OpenAPIField(name="externalDocs", type=ExternalDocumentation,
                      description="Additional external documentation for this "
                                  "operation."),
-        OpenAPIField(name="operationId", type=str,
+        OpenAPIField(name="operationId", type=string_type,
                      description="Unique string used to identify the "
                                  "operation. The id MUST be unique among all "
                                  "operations described in the API. Tools and "
@@ -830,7 +839,7 @@ class Operation(StaticOpenAPIObject):
                                  "defined semantics for request bodies. In "
                                  "other cases where the HTTP spec is vague, "
                                  "requestBody SHALL be ignored by consumers."),
-        OpenAPIField(name="callBacks", type=Map(str, OneOf([CallBack,
+        OpenAPIField(name="callBacks", type=Map(string_type, OneOf([CallBack,
                                                             Referance])),
                      description="A map of possible out-of band callbacks "
                                  "related to the parent operation. The key "
@@ -870,17 +879,17 @@ class Operation(StaticOpenAPIObject):
 
 class Path(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="$ref", type=str,
+        OpenAPIField(name="$ref", type=string_type,
                      description="Allows for an external definition of this "
                                  "path item. The referenced structure MUST "
                                  "be in the format of a Path Item Object. If "
                                  "there are conflicts between the referenced "
                                  "definition and this Path Item's "
                                  "definition, the behavior is undefined."),
-        OpenAPIField(name="summary", type=str,
+        OpenAPIField(name="summary", type=string_type,
                      description="An optional, string summary, intended to "
                                  "apply to all operations in this path."),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="An optional, string description, intended "
                                  "to apply to all operations in this path. "
                                  "CommonMark syntax MAY be used for rich "
@@ -930,6 +939,25 @@ class Path(StaticOpenAPIObject):
                                  "parameter.")
     ]
 
+    @property
+    def methods(self):
+        all = {
+            "get": self.get,
+            "post": self.post,
+            "put": self.put,
+            "delete": self.delete,
+            "options": self.options,
+            "head": self.head,
+            "patch": self.patch,
+            "trace": self.trace,
+        }
+
+        for key in list(all.keys()):
+            if all[key] == None:
+                del all[key]
+
+        return all
+
 
 class Paths(PatternedOpenAPIObject):
     patterns = [
@@ -954,19 +982,22 @@ class Paths(PatternedOpenAPIObject):
                                    "to decide which one to use.")
     ]
 
+    def all(self):
+        return list(self.kwargs.keys())
+
 
 class OAuthFlow(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="authorizationUrl", type=str, required=True,
+        OpenAPIField(name="authorizationUrl", type=string_type, required=True,
                      description="The authorization URL to be used for this "
                                  "flow. This MUST be in the form of a URL."),
-        OpenAPIField(name="tokenUrl", type=str, required=True,
+        OpenAPIField(name="tokenUrl", type=string_type, required=True,
                      description="The token URL to be used for this flow. "
                                  "This MUST be in the form of a URL."),
-        OpenAPIField(name="refreshUrl", type=str,
+        OpenAPIField(name="refreshUrl", type=string_type,
                      description="The URL to be used for obtaining refresh "
                                  "tokens. This MUST be in the form of a URL."),
-        OpenAPIField(name="scopes", type=Map(str, str), required=True,
+        OpenAPIField(name="scopes", type=Map(string_type, string_type), required=True,
                      description="The available scopes for the OAuth2 "
                                  "security scheme. A map between the scope "
                                  "name and a short description for it.")
@@ -998,21 +1029,21 @@ class SecurityScheme(StaticOpenAPIObject):
                      description='The type of the security scheme. Valid '
                                  'values are "apiKey", "http", "oauth2", '
                                  '"openIdConnect".'),
-        OpenAPIField(name="description", type=str,
+        OpenAPIField(name="description", type=string_type,
                      description="	A short description for security scheme. "
                                  "CommonMark syntax MAY be used for rich "
                                  "text representation."),
-        OpenAPIField(name="name", type=str,
+        OpenAPIField(name="name", type=string_type,
                      description="The name of the header, query or cookie "
                                  "parameter to be used."),
         OpenAPIField(name="in", type=Enum(["query", "header", "cookie"]),
                      description='The location of the API key. Valid values '
                                  'are "query", "header" or "cookie".'),
-        OpenAPIField(name="scheme", type=str,
+        OpenAPIField(name="scheme", type=string_type,
                      description="The name of the HTTP Authorization scheme "
                                  "to be used in the Authorization header as "
                                  "defined in RFC7235."),
-        OpenAPIField(name="bearerFormat", type=str,
+        OpenAPIField(name="bearerFormat", type=string_type,
                      description="A hint to the client to identify how the "
                                  "bearer token is formatted. Bearer tokens "
                                  "are usually generated by an authorization "
@@ -1021,7 +1052,7 @@ class SecurityScheme(StaticOpenAPIObject):
         OpenAPIField(name="flows", type=OAuthFlows, required=True,
                      description="An object containing configuration "
                                  "information for the flow types supported."),
-        OpenAPIField(name="openIdConnectUrl", type=str, required=True,
+        OpenAPIField(name="openIdConnectUrl", type=string_type, required=True,
                      description="OpenId Connect URL to discover OAuth2 "
                                  "configuration values. This MUST be in the "
                                  "form of a URL.")
@@ -1031,36 +1062,36 @@ class SecurityScheme(StaticOpenAPIObject):
 class Componenets(StaticOpenAPIObject):
     fields = [
         OpenAPIField(name="schemas",
-                     type=Map(str, OneOf([Schema, Referance])),
+                     type=Map(string_type, OneOf([Schema, Referance])),
                      description="An object to hold reusable Schema Objects."),
         OpenAPIField(name="responses",
-                     type=Map(str, OneOf([Response, Referance])),
+                     type=Map(string_type, OneOf([Response, Referance])),
                      description="An object to hold reusable Response "
                                  "Objects."),
         OpenAPIField(name="parameters",
-                     type=Map(str, OneOf([Parameter, Referance])),
+                     type=Map(string_type, OneOf([Parameter, Referance])),
                      description="An object to hold reusable Parameter "
                                  "Objects."),
         OpenAPIField(name="examples",
-                     type=Map(str, OneOf([Example, Referance])),
+                     type=Map(string_type, OneOf([Example, Referance])),
                      description="An object to hold reusable Example "
                                  "Objects."),
         OpenAPIField(name="requestBodies",
-                     type=Map(str, OneOf([RequestBody, Referance])),
+                     type=Map(string_type, OneOf([RequestBody, Referance])),
                      description="An object to hold reusable Request Body "
                                  "Objects."),
         OpenAPIField(name="headers",
-                     type=Map(str, OneOf([Header, Referance])),
+                     type=Map(string_type, OneOf([Header, Referance])),
                      description="An object to hold reusable Header Objects."),
         OpenAPIField(name="securitySchemes",
-                     type=Map(str, OneOf([SecurityScheme, Referance])),
+                     type=Map(string_type, OneOf([SecurityScheme, Referance])),
                      description="An object to hold reusable Security Scheme "
                                  "Objects."),
         OpenAPIField(name="links",
-                     type=Map(str, OneOf([Link, Referance])),
+                     type=Map(string_type, OneOf([Link, Referance])),
                      description="An object to hold reusable Link Objects."),
         OpenAPIField(name="callbacks",
-                     type=Map(str, OneOf([CallBack, Referance])),
+                     type=Map(string_type, OneOf([CallBack, Referance])),
                      description="An object to hold reusable Callback "
                                  "Objects."),
     ]
@@ -1068,7 +1099,7 @@ class Componenets(StaticOpenAPIObject):
 
 class OpenAPI(StaticOpenAPIObject):
     fields = [
-        OpenAPIField(name="openapi", type=str, required=True,
+        OpenAPIField(name="openapi", type=string_type, required=True,
                      description="This string MUST be the semantic version "
                                  "number of the OpenAPI Specification "
                                  "version that the OpenAPI document uses. "

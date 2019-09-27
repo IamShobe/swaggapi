@@ -3,10 +3,12 @@ from __future__ import absolute_import
 import re
 import json
 from textwrap import TextWrapper
+from cached_property import cached_property
 
 from six import add_metaclass
 
 from .utils import is_instance
+from .types import is_primitive
 
 
 class OpenAPIError(Exception):
@@ -62,18 +64,24 @@ class OpenAPIObject(object):
 class PatternedOpenAPIObject(OpenAPIObject):
     patterns = NotImplemented
 
+    def __iter__(self):
+        return (key for key in self.kwargs)
+
     @property
     def pattern_fields(self):
         return self.kwargs
 
+    def __getitem__(self, item):
+        return getattr(self, item)
+
     @classmethod
-    def is_matched(self, value):
+    def is_matched(cls, value):
         if not is_instance(value, dict):
             return False
 
         for arg, _value in value.items():
             found = None
-            for pattern in self.patterns:
+            for pattern in cls.patterns:
                 match = re.match(pattern.pattern, arg)
                 if match:
                     found = pattern
@@ -87,6 +95,18 @@ class PatternedOpenAPIObject(OpenAPIObject):
 
         return True
 
+    @classmethod
+    def raise_problem(cls, arg):
+        wrapper = TextWrapper(initial_indent="        ",
+                              subsequent_indent="        ")
+        available_patterns = ["    Pattern: '{}'\n{}""".format(
+            pattern.pattern, wrapper.fill(pattern.description))
+            for pattern in cls.patterns]
+
+        raise OpenAPIError("No pattern found for given arg: {}."
+                           "\nAvailable Patterns:\n{}".format(
+            arg, "\n".join(available_patterns)))
+
     def validate_args_patterns(self):
         for arg, value in self.pattern_fields.items():
             found = None
@@ -97,15 +117,7 @@ class PatternedOpenAPIObject(OpenAPIObject):
                     break
 
             if found is None:
-                wrapper = TextWrapper(initial_indent="        ",
-                                      subsequent_indent="        ")
-                available_patterns = ["    Pattern: '{}'\n{}""".format(
-                    pattern.pattern, wrapper.fill(pattern.description))
-                for pattern in self.patterns]
-
-                raise OpenAPIError("No pattern found for given arg: {}."
-                                   "\nAvailable Patterns:\n{}".format(
-                    arg, "\n".join(available_patterns)))
+                self.raise_problem(arg)
 
             if not is_instance(value, found.type):
                 raise OpenAPIError("Value type invalid: {} expected {}".format(
@@ -113,6 +125,25 @@ class PatternedOpenAPIObject(OpenAPIObject):
 
     def validate(self):
         self.validate_args_patterns()
+
+    @classmethod
+    def decode(cls, dict):
+        to_ret = {}
+        for key, value in dict.items():
+            found = None
+            for pattern in cls.patterns:
+                match = re.match(pattern.pattern, key)
+                if match:
+                    found = pattern
+                    break
+
+            if found is None:
+                cls.raise_problem(key)
+
+            to_ret[key] = found.type.decode(value)
+
+        return cls(**to_ret)
+
 
 
 class StaticOpenAPIMetaClass(type):
@@ -142,7 +173,10 @@ class StaticOpenAPIObject(OpenAPIObject):
     def __init__(self, **kwargs):
         super(StaticOpenAPIObject, self).__init__(**kwargs)
         self.initiate_default_fields()
-    
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
     def __setattr__(self, key, value):
         fields_dict = {field.name: field for field in self.fields}
         if key in list(fields_dict.keys()):
@@ -193,6 +227,18 @@ class StaticOpenAPIObject(OpenAPIObject):
         self.validate_no_extra()
         self.validate_type()
 
+    @classmethod
+    def decode(cls, dict):
+        to_ret = {}
+        for key, value in dict.items():
+            if is_primitive(value):
+                to_ret[key] = value
+            else:
+                to_ret[key] = cls.fields_dict[key].type.decode(value)
+
+        return cls(**to_ret)
+
+
 
 class PatternedStaticOpenAPIObject(StaticOpenAPIObject,
                                    PatternedOpenAPIObject):
@@ -204,6 +250,9 @@ class PatternedStaticOpenAPIObject(StaticOpenAPIObject,
                 pattern_keys.remove(field.name)
 
         return {key: self.kwargs[key] for key in pattern_keys}
+
+    def __getitem__(self, item):
+        return getattr(self, item)
 
     @property
     def static_fields(self):
@@ -217,6 +266,33 @@ class PatternedStaticOpenAPIObject(StaticOpenAPIObject,
         self.validate_no_extra()
         self.validate_args_patterns()
         self.validate_type()
+
+    @classmethod
+    def decode(cls, dict):
+        to_ret = {}
+
+        for key, value in dict.items():
+            found = None
+            for pattern in cls.patterns:
+                match = re.match(pattern.pattern, key)
+                if match:
+                    found = pattern
+                    break
+
+            if found is None:
+                if key in cls.fields_dict:
+                    if is_primitive(value):
+                        to_ret[key] = value
+                    else:
+                        to_ret[key] = cls.fields_dict[key].type.decode(value)
+
+                else:
+                    cls.raise_problem(key)
+
+            else:
+                to_ret[key] = found.type.decode(value)
+
+        return cls(**to_ret)
 
 
 class OpenAPIField(object):

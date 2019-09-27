@@ -1,12 +1,15 @@
 from __future__ import absolute_import
 
+import inspect
+
 from .types import (DynamicType,
                     OneOf,
                     MultiTypeList,
                     List,
                     Enum,
                     Map,
-                    SpecialType)
+                    SpecialType,
+                    string_type)
 
 
 def is_instance(value, class_name):
@@ -72,6 +75,9 @@ def is_instance(value, class_name):
 
             if any(is_instance(value, klass) for klass in class_name):
                 return True
+
+        if inspect.isclass(class_name) and isinstance(value, class_name):
+            return True
 
         elif issubclass(class_name, PatternedOpenAPIObject):
             return class_name.is_matched(value)

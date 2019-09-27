@@ -34,8 +34,7 @@ def get_schema(model, schema_bank, type, index=None):
         schema = handler(schema_bank, index)
         schema_bank[type][ref_name] = schema
 
-    return Referance(ref_name, type,
-                     **{"$ref": "#/components/{}/{}".format(type, ref_name)})
+    return Referance(**{"$ref": "#/components/{}/{}".format(type, ref_name)})
 
 
 def isfit(obj, class_name):
