@@ -27,6 +27,7 @@ setup(
     license="MIT",
     author="Elran Shefer",
     author_email="elran777@gmail.com",
+    url="https://github.com/IamShobe/swaggapi",
     install_requires=requirements,
     python_requires=">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*",
     packages=find_packages("src"),
